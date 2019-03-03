@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Ted2Transcript</string>
+    <string name="transcript_sample_text">This is sample text.\nLine 2.\nLine 3.\nLine 4.\nLine 5.</string>
+</resources>
