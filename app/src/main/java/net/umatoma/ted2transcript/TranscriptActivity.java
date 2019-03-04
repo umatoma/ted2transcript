@@ -139,7 +139,7 @@ public class TranscriptActivity extends AppCompatActivity {
             for (int j = 0; j < cues.length(); j++) {
                 JSONObject cue = cues.getJSONObject(j);
 
-                String text = cue.getString("text");
+                String text = cue.getString("text").replaceAll("\\n", " ");
                 stringBuilder.append(text);
                 stringBuilder.append(" ");
             }
