@@ -27,7 +27,7 @@ public class TranscriptActivity extends AppCompatActivity {
     private static final String TAG = "TranscriptActivity";
 
     private interface FetchTranscriptCallback {
-        void onSuccess(String transcript);
+        void onSuccess(String transcript, String talkUrl);
 
         void onFailure(Exception e);
     }
@@ -40,6 +40,8 @@ public class TranscriptActivity extends AppCompatActivity {
         TextView transcriptTextView = findViewById(R.id.transcriptTextView);
         transcriptTextView.setText("NOW LOADING...");
 
+        TextView talkUrlTextView = findViewById(R.id.talkUrlTextView);
+
         String text = this.getSharedText();
         if (text != null) {
             Pattern pattern = Pattern.compile("https://go\\.ted\\.com/\\w+");
@@ -48,8 +50,9 @@ public class TranscriptActivity extends AppCompatActivity {
                 String talkUrl = matcher.group(0);
                 this.fetchTranscript(talkUrl, new FetchTranscriptCallback() {
                     @Override
-                    public void onSuccess(String transcript) {
+                    public void onSuccess(String transcript, String talkUrl) {
                         transcriptTextView.setText(transcript);
+                        talkUrlTextView.setText(talkUrl);
                     }
 
                     @Override
@@ -117,7 +120,7 @@ public class TranscriptActivity extends AppCompatActivity {
                         String responseBody = response.body().string();
                         try {
                             String transcript = TranscriptActivity.this.transcriptJsonToString(responseBody);
-                            handler.post(() -> fetchTranscriptCallback.onSuccess(transcript));
+                            handler.post(() -> fetchTranscriptCallback.onSuccess(transcript, talkUrl));
                         } catch (JSONException e) {
                             handler.post(() -> fetchTranscriptCallback.onFailure(e));
                         }
