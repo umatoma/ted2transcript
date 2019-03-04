@@ -2,4 +2,5 @@
     <string name="app_name">Ted2Transcript</string>
     <string name="transcript_sample_url">https://www.ted.com/talks/juliet_brophy_how_a_new_species_of_ancestors_is_changing_our_theory_of_human_evolution</string>
     <string name="transcript_sample_text">This is sample text.\nLine 2.\nLine 3.\nLine 4.\nLine 5.</string>
+    <string name="loading_transcript">NOW LOADING...</string>
 </resources>

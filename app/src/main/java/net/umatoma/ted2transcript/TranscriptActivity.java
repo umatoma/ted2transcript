@@ -25,44 +25,55 @@ import okhttp3.Response;
 public class TranscriptActivity extends AppCompatActivity {
 
     private static final String TAG = "TranscriptActivity";
+    private static final String STATE_TRANSCRIPT = "stateTranscript";
+    private static final String STATE_TALK_URL = "stateTalkUrl";
 
-    private interface FetchTranscriptCallback {
-        void onSuccess(String transcript, String talkUrl);
-
-        void onFailure(Exception e);
-    }
+    private TextView transcriptTextView;
+    private TextView talkUrlTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_transcript);
 
-        TextView transcriptTextView = findViewById(R.id.transcriptTextView);
-        transcriptTextView.setText("NOW LOADING...");
+        this.transcriptTextView = findViewById(R.id.transcriptTextView);
+        this.talkUrlTextView = findViewById(R.id.talkUrlTextView);
+        this.transcriptTextView.setText(getString(R.string.loading_transcript));
 
-        TextView talkUrlTextView = findViewById(R.id.talkUrlTextView);
-
-        String text = this.getSharedText();
-        if (text != null) {
-            Pattern pattern = Pattern.compile("https://go\\.ted\\.com/\\w+");
-            Matcher matcher = pattern.matcher(text);
-            if (matcher.find()) {
-                String talkUrl = matcher.group(0);
-                this.fetchTranscript(talkUrl, new FetchTranscriptCallback() {
+        if (savedInstanceState != null) {
+            String transcript = savedInstanceState.getString(STATE_TRANSCRIPT);
+            String talkUrl = savedInstanceState.getString(STATE_TALK_URL);
+            this.setViewData(transcript, talkUrl);
+        } else {
+            String shortUrl = this.getShortUrlFromSharedText();
+            if (shortUrl != null) {
+                this.fetchTranscript(shortUrl, new FetchTranscriptCallback() {
                     @Override
                     public void onSuccess(String transcript, String talkUrl) {
-                        transcriptTextView.setText(transcript);
-                        talkUrlTextView.setText(talkUrl);
+                        TranscriptActivity.this.setViewData(transcript, talkUrl);
                     }
 
                     @Override
                     public void onFailure(Exception e) {
                         e.printStackTrace();
-                        transcriptTextView.setText(e.getMessage());
+                        TranscriptActivity.this.transcriptTextView.setText(e.getMessage());
                     }
                 });
             }
         }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putString(STATE_TRANSCRIPT, String.valueOf(this.transcriptTextView.getText()));
+        outState.putString(STATE_TALK_URL, String.valueOf(this.talkUrlTextView.getText()));
+
+        super.onSaveInstanceState(outState);
+    }
+
+    private void setViewData(String transcript, String talkUrl) {
+        this.transcriptTextView.setText(transcript);
+        this.talkUrlTextView.setText(talkUrl);
     }
 
     private String getSharedText() {
@@ -79,6 +90,19 @@ public class TranscriptActivity extends AppCompatActivity {
             }
         }
 
+        return null;
+    }
+
+    private String getShortUrlFromSharedText() {
+        String text = this.getSharedText();
+        if (text != null) {
+            Pattern pattern = Pattern.compile("https://go\\.ted\\.com/\\w+");
+            Matcher matcher = pattern.matcher(text);
+            if (matcher.find()) {
+                String shortUrl = matcher.group(0);
+                return shortUrl;
+            }
+        }
         return null;
     }
 
@@ -151,5 +175,11 @@ public class TranscriptActivity extends AppCompatActivity {
         }
 
         return stringBuilder.toString();
+    }
+
+    private interface FetchTranscriptCallback {
+        void onSuccess(String transcript, String talkUrl);
+
+        void onFailure(Exception e);
     }
 }
