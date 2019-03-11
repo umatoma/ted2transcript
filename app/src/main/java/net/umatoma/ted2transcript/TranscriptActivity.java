@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.widget.TextView;
 
 import org.json.JSONArray;
@@ -38,7 +39,7 @@ public class TranscriptActivity extends AppCompatActivity {
 
         this.transcriptTextView = findViewById(R.id.transcriptTextView);
         this.talkUrlTextView = findViewById(R.id.talkUrlTextView);
-        this.transcriptTextView.setText(getString(R.string.loading_transcript));
+        this.talkUrlTextView.setText(getString(R.string.loading_transcript));
 
         if (savedInstanceState != null) {
             String transcript = savedInstanceState.getString(STATE_TRANSCRIPT);
@@ -56,9 +57,13 @@ public class TranscriptActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(Exception e) {
                         e.printStackTrace();
+                        TranscriptActivity.this.talkUrlTextView.setText("FAILED TO FETCH TRANSCRIPT!");
                         TranscriptActivity.this.transcriptTextView.setText(e.getMessage());
                     }
                 });
+            } else {
+                this.talkUrlTextView.setText("FAILED TO EXTRACT URL!");
+                this.transcriptTextView.setText(this.getSharedText());
             }
         }
     }
@@ -96,7 +101,7 @@ public class TranscriptActivity extends AppCompatActivity {
     private String getShortUrlFromSharedText() {
         String text = this.getSharedText();
         if (text != null) {
-            Pattern pattern = Pattern.compile("https://go\\.ted\\.com/\\w+");
+            Pattern pattern = Pattern.compile("https?://go\\.ted\\.com/\\w+");
             Matcher matcher = pattern.matcher(text);
             if (matcher.find()) {
                 String shortUrl = matcher.group(0);
@@ -115,7 +120,12 @@ public class TranscriptActivity extends AppCompatActivity {
                 .followSslRedirects(false)
                 .build();
 
-        Request request = new Request.Builder().url(shortUrl).build();
+        Request request = new Request.Builder()
+                .url(this.httpToHttps(shortUrl))
+                .build();
+
+        Log.i(TAG, "fetchTranscript: request.url()=" + request.url());
+
         httpClient.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -124,7 +134,9 @@ public class TranscriptActivity extends AppCompatActivity {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                String talkUrl = response.header("location");
+                String location = response.header("location");
+                String talkUrl = TranscriptActivity.this.httpToHttps(location);
+
                 String transcriptUrl = Uri.parse(talkUrl)
                         .buildUpon()
                         .appendPath("transcript.json")
@@ -152,6 +164,14 @@ public class TranscriptActivity extends AppCompatActivity {
                 });
             }
         });
+    }
+
+    private String httpToHttps(String url) {
+        return Uri.parse(url)
+                .buildUpon()
+                .scheme("https")
+                .build()
+                .toString();
     }
 
     private String transcriptJsonToString(String jsonString) throws JSONException {
